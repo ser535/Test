@@ -5,8 +5,10 @@ using UnityEngine.SceneManagement;
 
 public class PlayerScript : MonoBehaviour
 {
-    [SerializeField] float startSpeed = 5f;
     [SerializeField] float jumpHeight = 10;
+    [SerializeField] float trampolineJumpHeight = 17f; 
+    [Space]
+    [SerializeField] float startSpeed = 5f;
     [SerializeField] float radius;
     [SerializeField] LayerMask groundMask;
     Rigidbody2D rb;
@@ -14,6 +16,8 @@ public class PlayerScript : MonoBehaviour
     bool Check = false;
     bool isJump = false;
     bool isFinish = false;
+    bool isHoldInAir = false;
+    bool isGroundOnce = false;
     float lastPosX;
     float speed;
 
@@ -32,10 +36,8 @@ public class PlayerScript : MonoBehaviour
         isGround = Physics2D.OverlapCircle(transform.position, radius, groundMask);
         if ((Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.Space)) && isGround && !isJump && !isFinish)
         {
-            rb.velocity = new Vector2(rb.velocity.x, 0);
-            rb.AddForce(Vector2.up * jumpHeight, ForceMode2D.Impulse);
-            isJump = true;
-            StartCoroutine(JumpCheck());
+            Jump(jumpHeight);
+            isGroundOnce = true;
         }
         if (Check)
         {
@@ -47,7 +49,17 @@ public class PlayerScript : MonoBehaviour
         }
         else if (transform.position.x - lastPosX > 0.05)
             Check = true;
-
+        
+        
+        if (JumpInput() && !isGround)
+        {
+            isHoldInAir = true;
+        }
+        else if (Input.GetKeyUp(KeyCode.Mouse0) || Input.GetKeyUp(KeyCode.Space) || isGroundOnce)
+        {
+            isHoldInAir = false;
+            isGroundOnce = false;
+        }
     }
     private void FixedUpdate()
     {
@@ -72,11 +84,36 @@ public class PlayerScript : MonoBehaviour
             speed = 0;
             isFinish = true;
         }
+        else if (collision.gameObject.CompareTag("Trampoline"))
+        {
+            Jump(trampolineJumpHeight);
+        }
     }
 
     IEnumerator JumpCheck()
     {
         yield return new WaitForSeconds(0.1f);
         isJump = false;
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    { 
+        if (collision.gameObject.CompareTag("Orb") && (JumpInput() || isHoldInAir))
+        {
+            Jump(jumpHeight);
+        }
+    }
+
+    void Jump(float jumpForce)
+    {
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        isJump = true;
+        StartCoroutine(JumpCheck());
+    }
+
+    bool JumpInput()
+    {
+        return (Input.GetKeyDown(KeyCode.Mouse0) || Input.GetKeyDown(KeyCode.Space));
     }
 }
