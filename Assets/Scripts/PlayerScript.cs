@@ -107,7 +107,8 @@ public class PlayerScript : MonoBehaviour
     void Jump(float jumpForce)
     {
         rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+        var koof = rb.gravityScale < 0 ? -1 : 1;
+        rb.AddForce(Vector2.up * jumpForce * koof, ForceMode2D.Impulse);
         isJump = true;
         StartCoroutine(JumpCheck());
     }
